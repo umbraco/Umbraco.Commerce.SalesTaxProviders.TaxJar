@@ -1,0 +1,18 @@
+{
+  "id": "Umbraco.Commerce.SalesTaxProviders.TaxJar",
+  "name": "TaxJar sales tax provider for Umbraco Commerce",
+  "version": "14.0.0--rc1.preview.3.g435eb2a",
+  "allowPackageTelemetry": true,
+  "extensions": [
+    {
+      "type": "localization",
+      "alias": "Uc.SalesTaxProviders.TaxJar.Localization.En",
+      "weight": -100,
+      "name": "English",
+      "meta": {
+        "culture": "en"
+      },
+      "js": "/App_Plugins/UmbracoCommerceSalesTaxProvidersTaxJar/lang/en.js"
+    }
+  ]
+}

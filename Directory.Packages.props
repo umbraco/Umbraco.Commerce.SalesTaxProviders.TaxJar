@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" />
+    <GlobalPackageReference Include="Nerdbank.GitVersioning" Version="3.5.119" />
+    <GlobalPackageReference Include="Umbraco.Code" Version="2.2.0" />
+    <GlobalPackageReference Include="Umbraco.GitVersioning.Extensions" Version="0.2.0" />
+    <GlobalPackageReference Include="Umbraco.JsonSchema.Extensions" Version="0.3.0" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <!--<PackageVersion Include="Umbraco.Commerce.Core" Version="[14.1.0-preview.3, 15)" />-->
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="[8.0.0, 9)" />
+    <PackageVersion Include="TaxJar" Version="[4.0.0, 5)" />
+  </ItemGroup>
+</Project>

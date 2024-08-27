@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+      <Title>Umbraco Commerce TaxJar Sales Tax Provider</Title>
+      <Description>TaxJar sales tax provider for Umbraco Commerce</Description>
+      <StaticWebAssetBasePath>App_Plugins/UmbracoCommerceSalesTaxProvidersTaxJar</StaticWebAssetBasePath>
+      <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="TaxJar" />
+      <PackageReference Include="Microsoft.Extensions.Http" />
+      <!--<PackageReference Include="Umbraco.Commerce.Core" />-->
+    </ItemGroup>
+
+    <ItemGroup>
+      <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\..\Umbraco.Commerce.v14x\src\Umbraco.Commerce.Core\Umbraco.Commerce.Core.csproj" />
+    </ItemGroup>
+
+    <!-- Update umbraco-package.json files with current build version -->
+    <!-- Assumes that the client assets have already been built to wwwroot -->
+    <Target Name="UpdatePackageManifestVersion" BeforeTargets="BeforeBuild" DependsOnTargets="GetBuildVersion;GetUmbracoBuildVersion" Condition="Exists('wwwroot\umbraco-package.json')">
+      <Message Text="Update umbraco-package.json files with current build version" Importance="high" />
+      <ItemGroup>
+        <_PackageManifestFiles Include="wwwroot\umbraco-package.json" />
+      </ItemGroup>
+      <JsonPathUpdateValue JsonFile="%(_PackageManifestFiles.FullPath)" Path="$.version" Value="&quot;$(PackageVersion)&quot;" />
+    </Target>
+
+</Project>
