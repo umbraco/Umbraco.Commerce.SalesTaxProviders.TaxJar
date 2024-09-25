@@ -4,10 +4,10 @@
     <Company>Umbraco HQ</Company>
     <Authors>Umbraco</Authors>
     <Copyright>Copyright © Umbraco $([System.DateTime]::Today.ToString('yyyy'))</Copyright>
-    <Product>Umbraco Commerce Shipmondo Shipping Provider</Product>
-    <PackageProjectUrl>https://github.com/umbraco/Umbraco.Commerce.ShippingProviders.Shipmondo</PackageProjectUrl>
+    <Product>Umbraco Commerce TaxJar Sales Tax Provider</Product>
+    <PackageProjectUrl>https://github.com/umbraco/Umbraco.Commerce.SalesTaxProviders.TaxJar</PackageProjectUrl>
     <PackageIcon>logo-128.png</PackageIcon>
-    <PackageTags>umbraco commerce Shipmondo umbraco-marketplace</PackageTags>
+    <PackageTags>umbraco commerce taxjar umbraco-marketplace</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <NeutralLanguage>en-US</NeutralLanguage>

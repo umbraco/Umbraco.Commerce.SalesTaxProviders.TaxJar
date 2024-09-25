@@ -20,7 +20,7 @@ parameters:
 
 variables:
   nodeVersion: 18.x
-  solution: Umbraco.Commerce.ShippingProviders.Shipmondo.sln
+  solution: Umbraco.Commerce.SalesTaxProviders.TaxJar.sln
   buildConfiguration: Release
   DOTNET_NOLOGO: true
   DOTNET_GENERATE_ASPNET_CERTIFICATE: false
