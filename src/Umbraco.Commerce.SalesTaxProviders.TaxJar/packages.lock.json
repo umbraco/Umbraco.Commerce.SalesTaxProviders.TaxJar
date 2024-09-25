@@ -51,6 +51,22 @@
           "Microsoft.CodeAnalysis.CSharp.Workspaces": "4.10.0"
         }
       },
+      "Umbraco.Commerce.Core": {
+        "type": "Direct",
+        "requested": "[14.1.0, 15.0.0)",
+        "resolved": "14.1.0",
+        "contentHash": "CSFncozCuBCEp2f9xQ6hF7qn4Lo+8rrBLROdS+W0AB05uYgs4ZkZ3+oLjRC3sAWL7zpf7aqA6Q04PNiAldQr/w==",
+        "dependencies": {
+          "Microsoft.AspNetCore.Http.Abstractions": "[2.2.0, 3.0.0)",
+          "Microsoft.Extensions.Caching.Memory": "[8.0.0, 9.0.0)",
+          "Microsoft.Extensions.Configuration.Abstractions": "[8.0.0, 9.0.0)",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[8.0.0, 9.0.0)",
+          "Microsoft.Extensions.FileProviders.Abstractions": "[8.0.0, 9.0.0)",
+          "Microsoft.Extensions.Options": "[8.0.0, 9.0.0)",
+          "RT.Comb": "[4.0.1, 5.0.0)",
+          "Umbraco.Commerce.Common": "14.1.0"
+        }
+      },
       "Umbraco.GitVersioning.Extensions": {
         "type": "Direct",
         "requested": "[0.2.0, )",
@@ -433,27 +449,16 @@
         "resolved": "7.0.0",
         "contentHash": "qmeeYNROMsONF6ndEZcIQ+VxR4Q/TX/7uIVLJqtwIWL7dDWeh0l1UIqgo4wYyjG//5lUNhwkLDSFl+pAWO6oiA=="
       },
-      "umbraco.commerce.common": {
-        "type": "Project",
+      "Umbraco.Commerce.Common": {
+        "type": "Transitive",
+        "resolved": "14.1.0",
+        "contentHash": "hbaXecdPH6BV2oTa3Vkrry/fJKS3lqCER/zSjY/EvuiuWxcXCAqPrZyH2B7miEJpJR7AH26WDg/t7e9k4O2Jbg==",
         "dependencies": {
           "CompareNETObjects": "[4.83.0, 5.0.0)",
           "Microsoft.Extensions.Caching.Memory": "[8.0.0, 9.0.0)",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[8.0.0, 9.0.0)",
           "Microsoft.Extensions.FileProviders.Abstractions": "[8.0.0, 9.0.0)",
           "System.Linq.Dynamic.Core": "[1.3.5, 2.0.0)"
-        }
-      },
-      "umbraco.commerce.core": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.AspNetCore.Http.Abstractions": "[2.2.0, 3.0.0)",
-          "Microsoft.Extensions.Caching.Memory": "[8.0.0, 9.0.0)",
-          "Microsoft.Extensions.Configuration.Abstractions": "[8.0.0, 9.0.0)",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[8.0.0, 9.0.0)",
-          "Microsoft.Extensions.FileProviders.Abstractions": "[8.0.0, 9.0.0)",
-          "Microsoft.Extensions.Options": "[8.0.0, 9.0.0)",
-          "RT.Comb": "[4.0.1, 5.0.0)",
-          "Umbraco.Commerce.Common": "[1.0.0, )"
         }
       }
     }
