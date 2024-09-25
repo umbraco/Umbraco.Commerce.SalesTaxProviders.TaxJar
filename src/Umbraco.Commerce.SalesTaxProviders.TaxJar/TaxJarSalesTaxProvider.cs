@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -56,69 +57,79 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
             });
 
             // Calculate tax
-            TaxResponseAttributes? taxResponse = await client.TaxForOrderAsync(new Tax
+            try
             {
-                // From Address
-                FromStreet = context.FromAddress.AddressLine1,
-                FromCity = context.FromAddress.City,
-                FromState = context.FromAddress.Region,
-                FromCountry = context.FromAddress.CountryIsoCode,
-                FromZip = context.FromAddress.ZipCode,
-
-                // To Address
-                ToStreet = context.ToAddress.AddressLine1,
-                ToCity = context.ToAddress.City,
-                ToState = context.ToAddress.Region,
-                ToCountry = context.ToAddress.CountryIsoCode,
-                ToZip = context.ToAddress.ZipCode,
-
-                // Subtotal
-                Amount = context.OrderCalculation.SubtotalPrice.Value.WithoutTax,
-
-                // Shipping
-                Shipping = context.OrderCalculation.ShippingTotalPrice.Value.WithoutTax,
-
-                // Order Lines
-                LineItems = context.Order.OrderLines.Select(x =>
+                TaxResponseAttributes? taxResponse = await client.TaxForOrderAsync(new Tax
                 {
-                    OrderLineCalculation? orderLineCalc = context.OrderCalculation.OrderLines[x.Id];
+                    // From Address
+                    FromStreet = context.FromAddress.AddressLine1,
+                    FromCity = context.FromAddress.City,
+                    FromState = context.FromAddress.Region,
+                    FromCountry = context.FromAddress.CountryIsoCode,
+                    FromZip = context.FromAddress.ZipCode,
 
-                    TaxClassReadOnly? taxClass = x.TaxClassId.HasValue
-                        ? taxClasses?.FirstOrDefault(y => y.Id == x.TaxClassId.Value)
-                        : storeDefaultTaxClass;
+                    // To Address
+                    ToStreet = context.ToAddress.AddressLine1,
+                    ToCity = context.ToAddress.City,
+                    ToState = context.ToAddress.Region,
+                    ToCountry = context.ToAddress.CountryIsoCode,
+                    ToZip = context.ToAddress.ZipCode,
 
-                    return new TaxLineItem
+                    // Subtotal
+                    Amount = context.OrderCalculation.SubtotalPrice.Value.WithoutTax,
+
+                    // Shipping
+                    Shipping = context.OrderCalculation.ShippingTotalPrice.Value.WithoutTax,
+
+                    // Order Lines
+                    LineItems = context.Order.OrderLines.Select(x =>
                     {
-                        Id = x.Sku,
-                        Quantity = (int)x.Quantity,
-                        ProductTaxCode = taxClass?.GetTaxCode(taxSource),
-                        UnitPrice = orderLineCalc.UnitPrice.Value.WithoutTax,
-                        Discount = orderLineCalc.TotalPrice.TotalAdjustment.WithoutTax
-                    };
+                        OrderLineCalculation? orderLineCalc = context.OrderCalculation.OrderLines[x.Id];
 
-                }).ToList()
-            }).ConfigureAwait(false);
+                        TaxClassReadOnly? taxClass = x.TaxClassId.HasValue
+                            ? taxClasses?.FirstOrDefault(y => y.Id == x.TaxClassId.Value)
+                            : storeDefaultTaxClass;
 
-            // Format Result
-            var result = new SalesTaxCalculationResult(new Amount(taxResponse.AmountToCollect, context.Order.CurrencyId))
+                        return new TaxLineItem
+                        {
+                            Id = x.Sku,
+                            Quantity = (int)x.Quantity,
+                            ProductTaxCode = taxClass?.GetTaxCode(taxSource),
+                            UnitPrice = orderLineCalc.UnitPrice.Value.WithoutTax,
+                            Discount = orderLineCalc.TotalPrice.TotalAdjustment.WithoutTax
+                        };
+
+                    }).ToList()
+                }).ConfigureAwait(false);
+
+                // Format Result
+                var result = new SalesTaxCalculationResult(new Amount(taxResponse.AmountToCollect, context.Order.CurrencyId))
+                {
+                    Jurisdictions = new Dictionary<string, string>
+                    {
+                        { "city", taxResponse.Jurisdictions.City },
+                        { "county", taxResponse.Jurisdictions.County },
+                        { "state", taxResponse.Jurisdictions.State },
+                        { "country", taxResponse.Jurisdictions.Country }
+                    },
+                    Breakdown = new []
+                    {
+                        new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.CityTaxCollectable, context.Order.CurrencyId), "city"),
+                        new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.CountyTaxCollectable, context.Order.CurrencyId), "county"),
+                        new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.StateTaxCollectable, context.Order.CurrencyId), "state"),
+                        new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.CountryTaxCollectable, context.Order.CurrencyId), "country"),
+                    }
+                };
+
+                return result;
+
+            }
+            catch (Exception e)
             {
-                Jurisdictions = new Dictionary<string, string>
-                {
-                    { "city", taxResponse.Jurisdictions.City },
-                    { "county", taxResponse.Jurisdictions.County },
-                    { "state", taxResponse.Jurisdictions.State },
-                    { "country", taxResponse.Jurisdictions.Country }
-                },
-                Breakdown = new []
-                {
-                    new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.CityTaxCollectable, context.Order.CurrencyId), "city"),
-                    new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.CountyTaxCollectable, context.Order.CurrencyId), "county"),
-                    new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.StateTaxCollectable, context.Order.CurrencyId), "state"),
-                    new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.CountryTaxCollectable, context.Order.CurrencyId), "country"),
-                }
-            };
+                logger.Error(e, "Failed to calculate sales tax using TaxJar API");
 
-            return result;
+                return new SalesTaxCalculationResult(zeroAmount);
+            }
         }
     }
 }
