@@ -34,15 +34,15 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
             }
 
             // Ensure the order is in USD
-            CurrencyReadOnly currency = ctx.Services.CurrencyService.GetCurrency(context.Order.CurrencyId);
+            CurrencyReadOnly currency = await ctx.Services.CurrencyService.GetCurrencyAsync(context.Order.CurrencyId);
             if (currency.Code.Equals("USD", System.StringComparison.OrdinalIgnoreCase) == false)
             {
                 return new SalesTaxCalculationResult(zeroAmount);
             }
 
             // Resolve reusable data
-            StoreReadOnly store = ctx.Services.StoreService.GetStore(context.Order.StoreId);
-            IEnumerable<TaxClassReadOnly> taxClasses = ctx.Services.TaxService.GetTaxClasses(context.Order.StoreId).ToList();
+            StoreReadOnly store = await ctx.Services.StoreService.GetStoreAsync(context.Order.StoreId);
+            IEnumerable<TaxClassReadOnly> taxClasses = (await ctx.Services.TaxService.GetTaxClassesAsync(context.Order.StoreId)).ToList();
             TaxClassReadOnly? storeDefaultTaxClass = store.DefaultTaxClassId.HasValue
                 ? taxClasses.FirstOrDefault(x => x.Id == store.DefaultTaxClassId.Value)
                 : null;
