@@ -1,7 +1,7 @@
 {
   "id": "Umbraco.Commerce.SalesTaxProviders.TaxJar",
   "name": "TaxJar sales tax provider for Umbraco Commerce",
-  "version": "15.0.0",
+  "version": "17.0.0--preview.0.gae2fc12",
   "allowPackageTelemetry": true,
   "extensions": [
     {
