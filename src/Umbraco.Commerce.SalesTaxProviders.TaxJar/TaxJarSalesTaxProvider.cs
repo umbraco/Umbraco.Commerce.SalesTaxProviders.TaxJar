@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Taxjar;
 using Umbraco.Commerce.Common.Logging;
 using Umbraco.Commerce.Core.Api;
 using Umbraco.Commerce.Core.Models;
@@ -14,7 +15,8 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
     [SalesTaxProvider("taxjar")]
     public class TaxJarSalesTaxProvider(
         UmbracoCommerceContext ctx,
-        ILogger<TaxJarSalesTaxProvider> logger)
+        ILogger<TaxJarSalesTaxProvider> logger,
+        IHttpClientFactory httpClientFactory)
         : SalesTaxProviderBase<TaxJarSettings>(ctx)
     {
         public override async Task<SalesTaxCalculationResult> CalculateSalesTaxAsync(
@@ -50,16 +52,17 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
                 ? new TaxSource(context.Order.ShippingInfo.CountryId.Value, context.Order.ShippingInfo.RegionId)
                 : new TaxSource(context.Order.PaymentInfo.CountryId!.Value, context.Order.PaymentInfo.RegionId);
 
-            // Create the TaxJar client
-            var client = new TaxjarApi(context.Settings.TestMode ? context.Settings.SandboxToken : context.Settings.LiveToken, new
-            {
-                apiUrl = context.Settings.TestMode ? "https://api.sandbox.taxjar.com" : "https://api.taxjar.com"
-            });
+            var token = context.Settings.TestMode ? context.Settings.SandboxToken : context.Settings.LiveToken;
+            var apiUrl = context.Settings.TestMode ? "https://api.sandbox.taxjar.com" : "https://api.taxjar.com";
+
+            HttpClient client = httpClientFactory.CreateClient();
+            client.BaseAddress = new Uri(apiUrl);
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
             // Calculate tax
             try
             {
-                TaxResponseAttributes? taxResponse = await client.TaxForOrderAsync(new Tax
+                var request = new TaxJarRequest
                 {
                     // From Address
                     FromStreet = context.FromAddress.AddressLine1,
@@ -90,7 +93,7 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
                             ? taxClasses?.FirstOrDefault(y => y.Id == x.TaxClassId.Value)
                             : storeDefaultTaxClass;
 
-                        return new TaxLineItem
+                        return new TaxJarLineItem
                         {
                             Id = x.Sku,
                             Quantity = (int)x.Quantity,
@@ -100,25 +103,36 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
                         };
 
                     }).ToList()
-                }).ConfigureAwait(false);
+                };
+
+                HttpResponseMessage response = await client.PostAsJsonAsync("/v2/taxes", request, cancellationToken).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
+
+                TaxJarResponse? taxResponse = await response.Content.ReadFromJsonAsync<TaxJarResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                if (taxResponse?.Tax == null)
+                {
+                    logger.Error("TaxJar API returned invalid response");
+                    return new SalesTaxCalculationResult(zeroAmount);
+                }
 
                 // Format Result
-                var result = new SalesTaxCalculationResult(new Amount(taxResponse.AmountToCollect, context.Order.CurrencyId))
+                var result = new SalesTaxCalculationResult(new Amount(taxResponse.Tax.AmountToCollect, context.Order.CurrencyId))
                 {
                     Jurisdictions = new Dictionary<string, string>
                     {
-                        { "city", taxResponse.Jurisdictions.City },
-                        { "county", taxResponse.Jurisdictions.County },
-                        { "state", taxResponse.Jurisdictions.State },
-                        { "country", taxResponse.Jurisdictions.Country }
+                        { "city", taxResponse.Tax.Jurisdictions?.City ?? string.Empty },
+                        { "county", taxResponse.Tax.Jurisdictions?.County ?? string.Empty },
+                        { "state", taxResponse.Tax.Jurisdictions?.State ?? string.Empty },
+                        { "country", taxResponse.Tax.Jurisdictions?.Country ?? string.Empty },
                     },
                     Breakdown = new []
                     {
-                        new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.CityTaxCollectable, context.Order.CurrencyId), "city"),
-                        new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.CountyTaxCollectable, context.Order.CurrencyId), "county"),
-                        new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.StateTaxCollectable, context.Order.CurrencyId), "state"),
-                        new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.CountryTaxCollectable, context.Order.CurrencyId), "country"),
-                    }
+                        new SalesTaxBreakdown(new Amount(taxResponse.Tax.Breakdown?.CityTaxCollectable ?? 0, context.Order.CurrencyId), "city"),
+                        new SalesTaxBreakdown(new Amount(taxResponse.Tax.Breakdown?.CountyTaxCollectable ?? 0, context.Order.CurrencyId), "county"),
+                        new SalesTaxBreakdown(new Amount(taxResponse.Tax.Breakdown?.StateTaxCollectable ?? 0, context.Order.CurrencyId), "state"),
+                        new SalesTaxBreakdown(new Amount(taxResponse.Tax.Breakdown?.CountryTaxCollectable ?? 0, context.Order.CurrencyId), "country"),
+                    },
                 };
 
                 return result;
