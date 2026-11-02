@@ -118,19 +118,62 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests
         }
 
         [Fact]
-        public void Constructing_TaxjarApi_Like_The_Provider_Leaves_The_Timeout_Unset()
+        public void CreateClient_Should_Set_An_Explicit_Timeout_Instead_Of_RestSharps_100_Second_Default()
         {
             // execution
-            TaxjarApi api = new("test-token", new { apiUrl = ApiUrl });
+            TaxjarApi api = TaxJarSalesTaxProvider.CreateClient(new TaxJarSettings { TestMode = true, SandboxToken = "test-token" });
 
             // asserts
-            api.timeout.Should().Be(0);
+            api.timeout.Should().Be(15000);
+        }
+
+        [Theory]
+        [InlineData(true, "https://api.sandbox.taxjar.com/v2/")]
+        [InlineData(false, "https://api.taxjar.com/v2/")]
+        public void CreateClient_Should_Use_The_Api_Url_For_The_Mode(bool testMode, string expectedBase)
+        {
+            // execution
+            TaxjarApi api = TaxJarSalesTaxProvider.CreateClient(new TaxJarSettings { TestMode = testMode, SandboxToken = "sandbox-token", LiveToken = "live-token" });
+
+            // asserts
+            api.apiUrl.Should().Be(expectedBase);
+        }
+
+        [Fact]
+        public async Task TaxForOrderAsync_Should_Fail_With_A_Timeout_The_Provider_Recognises_When_TaxJar_Is_Too_Slow()
+        {
+            // preparation
+            using StubHandler handler = new(TaxJarResponseMappingTests.TaxesResponseJson) { Delay = TimeSpan.FromSeconds(30) };
+            TaxjarApi api = CreateApi(handler);
+            api.timeout = 100;
+
+            // execution
+            Func<Task> call = () => api.TaxForOrderAsync(CreateRequest());
+
+            // asserts
+            Exception thrown = (await call.Should().ThrowAsync<Exception>()).Which;
+            TaxJarSalesTaxProvider.IsTimeout(thrown).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task IsTimeout_Should_Be_False_For_A_TaxJar_Error_Response()
+        {
+            // preparation
+            using StubHandler handler = new("""{"error":"Unauthorized","detail":"Bad token","status":401}""", HttpStatusCode.Unauthorized);
+            TaxjarApi api = CreateApi(handler);
+
+            // execution
+            Func<Task> call = () => api.TaxForOrderAsync(CreateRequest());
+
+            // asserts
+            Exception thrown = (await call.Should().ThrowAsync<Exception>()).Which;
+            TaxJarSalesTaxProvider.IsTimeout(thrown).Should().BeFalse();
         }
 
         private static TaxjarApi CreateApi(StubHandler handler)
         {
-            // Mirrors how TaxJarSalesTaxProvider constructs the client
-            TaxjarApi api = new("test-token", new { apiUrl = ApiUrl });
+            // Constructs the client the way TaxJarSalesTaxProvider does
+            TaxjarApi api = TaxJarSalesTaxProvider.CreateClient(new TaxJarSettings { TestMode = true, SandboxToken = "test-token" });
 
             FieldInfo apiClient = typeof(TaxjarApi).GetField("apiClient", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)!;
             RestClient original = (RestClient)apiClient.GetValue(api)!;
@@ -164,8 +207,15 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests
         {
             public List<StubRequest> Requests { get; } = [];
 
+            public TimeSpan Delay { get; init; } = TimeSpan.Zero;
+
             protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
+                if (Delay > TimeSpan.Zero)
+                {
+                    await Task.Delay(Delay, cancellationToken).ConfigureAwait(false);
+                }
+
                 string body = request.Content == null ? string.Empty : await request.Content.ReadAsStringAsync(cancellationToken);
                 Dictionary<string, string> headers = request.Headers.ToDictionary(h => h.Key, h => string.Join(",", h.Value));
                 Requests.Add(new StubRequest(request.Method, request.RequestUri!, headers, request.Content?.Headers.ContentType?.ToString(), body));
