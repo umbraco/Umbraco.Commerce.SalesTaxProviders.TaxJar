@@ -50,7 +50,7 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests
             Guid shippingRegion = Guid.NewGuid();
 
             // execution
-            TaxSource source = TaxJarCalculation.ResolveTaxSource(shippingCountry, shippingRegion, Guid.NewGuid(), Guid.NewGuid());
+            TaxSource source = TaxJarCalculation.ResolveTaxSource(shippingCountry, shippingRegion, Guid.NewGuid(), Guid.NewGuid())!;
 
             // asserts
             source.CountryId.Should().Be(shippingCountry);
@@ -64,7 +64,7 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests
             Guid shippingCountry = Guid.NewGuid();
 
             // execution
-            TaxSource source = TaxJarCalculation.ResolveTaxSource(shippingCountry, null, Guid.NewGuid(), Guid.NewGuid());
+            TaxSource source = TaxJarCalculation.ResolveTaxSource(shippingCountry, null, Guid.NewGuid(), Guid.NewGuid())!;
 
             // asserts
             source.CountryId.Should().Be(shippingCountry);
@@ -79,11 +79,21 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests
             Guid paymentRegion = Guid.NewGuid();
 
             // execution
-            TaxSource source = TaxJarCalculation.ResolveTaxSource(null, null, paymentCountry, paymentRegion);
+            TaxSource source = TaxJarCalculation.ResolveTaxSource(null, null, paymentCountry, paymentRegion)!;
 
             // asserts
             source.CountryId.Should().Be(paymentCountry);
             source.RegionId.Should().Be(paymentRegion);
+        }
+
+        [Fact]
+        public void ResolveTaxSource_Should_Return_Null_When_There_Is_No_Shipping_Or_Payment_Country()
+        {
+            // execution
+            TaxSource? source = TaxJarCalculation.ResolveTaxSource(null, Guid.NewGuid(), null, Guid.NewGuid());
+
+            // asserts
+            source.Should().BeNull();
         }
 
         [Fact]

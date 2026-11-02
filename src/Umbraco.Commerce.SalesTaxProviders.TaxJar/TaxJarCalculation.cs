@@ -21,15 +21,28 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
         public static bool IsUsd(string currencyCode)
             => currencyCode.Equals("USD", StringComparison.OrdinalIgnoreCase);
 
-        /// <summary>Uses the shipping country and region when set, otherwise the payment ones.</summary>
-        public static TaxSource ResolveTaxSource(
+        /// <summary>
+        /// Uses the shipping country and region when set, otherwise the payment ones.
+        /// Returns <c>null</c> when the order has neither a shipping nor a payment country.
+        /// </summary>
+        public static TaxSource? ResolveTaxSource(
             Guid? shippingCountryId,
             Guid? shippingRegionId,
             Guid? paymentCountryId,
             Guid? paymentRegionId)
-            => shippingCountryId.HasValue
-                ? new TaxSource(shippingCountryId.Value, shippingRegionId)
-                : new TaxSource(paymentCountryId!.Value, paymentRegionId);
+        {
+            if (shippingCountryId.HasValue)
+            {
+                return new TaxSource(shippingCountryId.Value, shippingRegionId);
+            }
+
+            if (paymentCountryId.HasValue)
+            {
+                return new TaxSource(paymentCountryId.Value, paymentRegionId);
+            }
+
+            return null;
+        }
 
         public static TaxLineItem BuildLineItem(
             string sku,
