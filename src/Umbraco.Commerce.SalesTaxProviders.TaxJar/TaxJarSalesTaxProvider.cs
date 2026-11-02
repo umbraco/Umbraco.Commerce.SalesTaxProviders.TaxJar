@@ -46,9 +46,18 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
             TaxClassReadOnly? storeDefaultTaxClass = store.DefaultTaxClassId.HasValue
                 ? taxClasses.FirstOrDefault(x => x.Id == store.DefaultTaxClassId.Value)
                 : null;
-            TaxSource taxSource = context.Order.ShippingInfo.CountryId.HasValue
+            TaxSource? taxSource = context.Order.ShippingInfo.CountryId.HasValue
                 ? new TaxSource(context.Order.ShippingInfo.CountryId.Value, context.Order.ShippingInfo.RegionId)
-                : new TaxSource(context.Order.PaymentInfo.CountryId!.Value, context.Order.PaymentInfo.RegionId);
+                : context.Order.PaymentInfo.CountryId.HasValue
+                    ? new TaxSource(context.Order.PaymentInfo.CountryId.Value, context.Order.PaymentInfo.RegionId)
+                    : null;
+
+            // Without a country the order's tax codes can't be resolved
+            if (taxSource == null)
+            {
+                logger.Debug("Unable to calculate TaxJar sales tax as the order has no shipping or payment country");
+                return new SalesTaxCalculationResult(zeroAmount);
+            }
 
             // Create the TaxJar client
             var client = new TaxjarApi(context.Settings.TestMode ? context.Settings.SandboxToken : context.Settings.LiveToken, new
