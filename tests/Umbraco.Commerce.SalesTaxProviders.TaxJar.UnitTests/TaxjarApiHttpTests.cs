@@ -154,7 +154,7 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests
             Shipping = 4.5m,
             LineItems =
             [
-                TaxJarCalculation.BuildLineItem("SKU-1", 2m, "20010", 10m, 1m),
+                TaxJarCalculation.BuildLineItem("SKU-1", 2m, "20010", 10m, -1m),
             ],
         };
 

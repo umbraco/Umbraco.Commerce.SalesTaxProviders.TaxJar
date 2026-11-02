@@ -78,7 +78,9 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
                             x.Sku,
                             x.Quantity,
                             taxClass?.GetTaxCode(taxSource),
-                            orderLineCalc.UnitPrice.Value.WithoutTax,
+                            // TotalPrice.TotalAdjustment already includes the unit price adjustments (x quantity),
+                            // so pair it with the unit price before adjustments to land on the line's total
+                            orderLineCalc.UnitPrice.WithoutAdjustments.WithoutTax,
                             orderLineCalc.TotalPrice.TotalAdjustment.WithoutTax);
                     }).ToList())).ConfigureAwait(false);
 

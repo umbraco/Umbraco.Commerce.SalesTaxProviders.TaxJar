@@ -64,17 +64,24 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
         }
 
         /// <summary>
-        /// Builds a TaxJar line item. TaxJar only accepts whole quantities, so a fractional quantity
-        /// (1.5 kg, say) is sent as one unit priced at the line's total, which keeps the taxable amount exact.
+        /// Builds a TaxJar line item so that quantity x unit price - discount is the order line's total.
+        /// TaxJar only accepts whole quantities, so a fractional quantity (1.5 kg, say) is sent as one unit
+        /// priced at the line's total, which keeps the taxable amount exact.
+        /// TaxJar's discount is a positive amount off the line, while Commerce adjustments are negative for
+        /// discounts and positive for surcharges, so <c>totalAdjustment</c> (the order line's total price adjustment)
+        /// is negated into the discount, and a surcharge is added to the line's price instead.
         /// </summary>
         public static TaxLineItem BuildLineItem(
             string sku,
             decimal quantity,
             string? productTaxCode,
             decimal unitPrice,
-            decimal discount)
+            decimal totalAdjustment)
         {
-            if (quantity == decimal.Truncate(quantity))
+            var discount = totalAdjustment < 0 ? -totalAdjustment : 0m;
+            var surcharge = totalAdjustment > 0 ? totalAdjustment : 0m;
+
+            if (quantity == decimal.Truncate(quantity) && surcharge == 0)
             {
                 return new()
                 {
@@ -91,7 +98,7 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
                 Id = sku,
                 Quantity = 1,
                 ProductTaxCode = productTaxCode,
-                UnitPrice = unitPrice * quantity,
+                UnitPrice = (unitPrice * quantity) + surcharge,
                 Discount = discount,
             };
         }

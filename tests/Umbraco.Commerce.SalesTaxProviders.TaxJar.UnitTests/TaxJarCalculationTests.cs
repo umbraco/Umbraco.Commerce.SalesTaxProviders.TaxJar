@@ -150,7 +150,7 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests
         public void BuildLineItem_Should_Map_Sku_Quantity_Tax_Code_Unit_Price_And_Discount()
         {
             // execution
-            TaxLineItem item = TaxJarCalculation.BuildLineItem("SKU-1", 3m, "20010", 9.99m, 2.5m);
+            TaxLineItem item = TaxJarCalculation.BuildLineItem("SKU-1", 3m, "20010", 9.99m, -2.5m);
 
             // asserts
             item.Id.Should().Be("SKU-1");
@@ -182,6 +182,46 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests
         }
 
         [Fact]
+        public void BuildLineItem_Should_Send_A_Commerce_Discount_As_A_Positive_TaxJar_Discount()
+        {
+            // execution
+            TaxLineItem item = TaxJarCalculation.BuildLineItem("SKU-1", 2m, null, 10m, -4m);
+
+            // asserts
+            item.Quantity.Should().Be(2);
+            item.UnitPrice.Should().Be(10m);
+            item.Discount.Should().Be(4m);
+        }
+
+        [Fact]
+        public void BuildLineItem_Should_Add_A_Surcharge_To_The_Line_Price_Instead_Of_Sending_A_Negative_Discount()
+        {
+            // execution
+            TaxLineItem item = TaxJarCalculation.BuildLineItem("SKU-1", 2m, null, 10m, 3m);
+
+            // asserts
+            item.Quantity.Should().Be(1);
+            item.UnitPrice.Should().Be(23m);
+            item.Discount.Should().Be(0m);
+        }
+
+        [Theory]
+        [InlineData(3, 9.99, -2.5)]
+        [InlineData(2, 10, 3)]
+        [InlineData(1.5, 10, -1)]
+        [InlineData(0.75, 4, 0.5)]
+        [InlineData(4, 2.5, 0)]
+        public void BuildLineItem_Should_Make_TaxJar_Tax_The_Order_Line_Total(decimal quantity, decimal unitPrice, decimal adjustment)
+        {
+            // execution
+            TaxLineItem item = TaxJarCalculation.BuildLineItem("SKU-1", quantity, null, unitPrice, adjustment);
+
+            // asserts
+            ((item.Quantity * item.UnitPrice) - item.Discount).Should().Be((quantity * unitPrice) + adjustment);
+            item.Discount.Should().BeGreaterThanOrEqualTo(0m);
+        }
+
+        [Fact]
         public void BuildLineItem_Should_Leave_The_Tax_Code_Empty_When_There_Is_None()
         {
             // execution
@@ -199,7 +239,7 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests
             Address to = new("2 Customer Ave", null!, "Beverly Hills", "CA", "US", "90210");
             List<TaxLineItem> lines =
             [
-                TaxJarCalculation.BuildLineItem("SKU-1", 2m, "20010", 10m, 1m),
+                TaxJarCalculation.BuildLineItem("SKU-1", 2m, "20010", 10m, -1m),
                 TaxJarCalculation.BuildLineItem("SKU-2", 1m, null, 5m, 0m),
             ];
 
