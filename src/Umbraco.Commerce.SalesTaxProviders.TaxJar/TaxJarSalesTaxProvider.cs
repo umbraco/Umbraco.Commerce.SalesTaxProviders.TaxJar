@@ -38,10 +38,8 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
 
             // Resolve reusable data
             StoreReadOnly store = await ctx.Services.StoreService.GetStoreAsync(context.Order.StoreId);
-            IEnumerable<TaxClassReadOnly> taxClasses = (await ctx.Services.TaxService.GetTaxClassesAsync(context.Order.StoreId)).ToList();
-            TaxClassReadOnly? storeDefaultTaxClass = store.DefaultTaxClassId.HasValue
-                ? taxClasses.FirstOrDefault(x => x.Id == store.DefaultTaxClassId.Value)
-                : null;
+            Dictionary<Guid, TaxClassReadOnly> taxClasses = (await ctx.Services.TaxService.GetTaxClassesAsync(context.Order.StoreId))
+                .ToDictionary(x => x.Id);
             TaxSource? taxSource = TaxJarCalculation.ResolveTaxSource(
                 context.Order.ShippingInfo.CountryId,
                 context.Order.ShippingInfo.RegionId,
@@ -73,9 +71,8 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
                     {
                         OrderLineCalculation? orderLineCalc = context.OrderCalculation.OrderLines[x.Id];
 
-                        TaxClassReadOnly? taxClass = x.TaxClassId.HasValue
-                            ? taxClasses?.FirstOrDefault(y => y.Id == x.TaxClassId.Value)
-                            : storeDefaultTaxClass;
+                        Guid? taxClassId = TaxJarCalculation.ResolveTaxClassId(x.TaxClassId, taxClasses.Keys, store.DefaultTaxClassId);
+                        TaxClassReadOnly? taxClass = taxClassId.HasValue ? taxClasses[taxClassId.Value] : null;
 
                         return TaxJarCalculation.BuildLineItem(
                             x.Sku,

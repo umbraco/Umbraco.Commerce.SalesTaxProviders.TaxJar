@@ -44,6 +44,25 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
             return null;
         }
 
+        /// <summary>
+        /// Picks the order line's tax class when it exists in the store, otherwise the store's default tax class.
+        /// Returns <c>null</c> when neither exists.
+        /// </summary>
+        public static Guid? ResolveTaxClassId(Guid? orderLineTaxClassId, ICollection<Guid> storeTaxClassIds, Guid? storeDefaultTaxClassId)
+        {
+            if (orderLineTaxClassId.HasValue && storeTaxClassIds.Contains(orderLineTaxClassId.Value))
+            {
+                return orderLineTaxClassId;
+            }
+
+            if (storeDefaultTaxClassId.HasValue && storeTaxClassIds.Contains(storeDefaultTaxClassId.Value))
+            {
+                return storeDefaultTaxClassId;
+            }
+
+            return null;
+        }
+
         public static TaxLineItem BuildLineItem(
             string sku,
             decimal quantity,

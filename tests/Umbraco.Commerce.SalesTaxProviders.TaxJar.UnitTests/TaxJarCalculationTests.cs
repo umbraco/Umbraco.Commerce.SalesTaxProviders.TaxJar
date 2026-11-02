@@ -97,6 +97,56 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests
         }
 
         [Fact]
+        public void ResolveTaxClassId_Should_Use_The_Order_Line_Tax_Class_When_It_Exists()
+        {
+            // preparation
+            Guid lineClass = Guid.NewGuid();
+            Guid defaultClass = Guid.NewGuid();
+
+            // execution
+            Guid? result = TaxJarCalculation.ResolveTaxClassId(lineClass, [lineClass, defaultClass], defaultClass);
+
+            // asserts
+            result.Should().Be(lineClass);
+        }
+
+        [Fact]
+        public void ResolveTaxClassId_Should_Use_The_Store_Default_When_The_Order_Line_Has_No_Tax_Class()
+        {
+            // preparation
+            Guid defaultClass = Guid.NewGuid();
+
+            // execution
+            Guid? result = TaxJarCalculation.ResolveTaxClassId(null, [defaultClass], defaultClass);
+
+            // asserts
+            result.Should().Be(defaultClass);
+        }
+
+        [Fact]
+        public void ResolveTaxClassId_Should_Use_The_Store_Default_When_The_Order_Line_Tax_Class_Is_Not_Found()
+        {
+            // preparation
+            Guid defaultClass = Guid.NewGuid();
+
+            // execution
+            Guid? result = TaxJarCalculation.ResolveTaxClassId(Guid.NewGuid(), [defaultClass], defaultClass);
+
+            // asserts
+            result.Should().Be(defaultClass);
+        }
+
+        [Fact]
+        public void ResolveTaxClassId_Should_Return_Null_When_Neither_Tax_Class_Exists()
+        {
+            // execution
+            Guid? result = TaxJarCalculation.ResolveTaxClassId(Guid.NewGuid(), [Guid.NewGuid()], Guid.NewGuid());
+
+            // asserts
+            result.Should().BeNull();
+        }
+
+        [Fact]
         public void BuildLineItem_Should_Map_Sku_Quantity_Tax_Code_Unit_Price_And_Discount()
         {
             // execution
