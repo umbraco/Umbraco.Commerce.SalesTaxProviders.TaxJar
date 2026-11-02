@@ -13,6 +13,6 @@
   <ItemGroup>
     <PackageVersion Include="Umbraco.Commerce.Core" Version="[19.0.0-beta.1, 19.999.999)" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="[11.0.0-rc.3.26522.148, 11.999.999)" />
-    <PackageVersion Include="TaxJar" Version="[4.0.0, 4.999.999)" />
+    <PackageVersion Include="TaxJar" Version="[5.0.0, 5.999.999)" />
   </ItemGroup>
 </Project>
