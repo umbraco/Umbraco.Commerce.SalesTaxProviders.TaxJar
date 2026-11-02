@@ -18,6 +18,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <InternalsVisibleTo Include="Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests" />
+    </ItemGroup>
+
+    <ItemGroup>
       <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
 
