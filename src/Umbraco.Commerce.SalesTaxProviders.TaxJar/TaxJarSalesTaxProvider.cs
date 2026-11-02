@@ -17,6 +17,9 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
         ILogger<TaxJarSalesTaxProvider> logger)
         : SalesTaxProviderBase<TaxJarSettings>(ctx)
     {
+        // RestSharp (used by the TaxJar SDK) waits 100 seconds by default, far longer than a checkout should hang
+        private const int RequestTimeoutMilliseconds = 15000;
+
         public override async Task<SalesTaxCalculationResult> CalculateSalesTaxAsync(
             SalesTaxProviderContext<TaxJarSettings> context, CancellationToken cancellationToken = default)
         {
@@ -62,7 +65,8 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
             // Create the TaxJar client
             var client = new TaxjarApi(context.Settings.TestMode ? context.Settings.SandboxToken : context.Settings.LiveToken, new
             {
-                apiUrl = context.Settings.TestMode ? "https://api.sandbox.taxjar.com" : "https://api.taxjar.com"
+                apiUrl = context.Settings.TestMode ? "https://api.sandbox.taxjar.com" : "https://api.taxjar.com",
+                timeout = RequestTimeoutMilliseconds,
             });
 
             // Calculate tax
@@ -135,12 +139,35 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
                 return result;
 
             }
+            catch (Exception e) when (IsTimeout(e))
+            {
+                logger.Warn(e, "TaxJar didn't respond within {TimeoutSeconds} seconds; no sales tax was calculated", RequestTimeoutMilliseconds / 1000);
+
+                return new SalesTaxCalculationResult(zeroAmount);
+            }
             catch (Exception e)
             {
                 logger.Error(e, "Failed to calculate sales tax using TaxJar API");
 
                 return new SalesTaxCalculationResult(zeroAmount);
             }
+        }
+
+        /// <summary>
+        /// The TaxJar SDK wraps a timed-out request in a plain <see cref="Exception"/> whose inner exception is
+        /// the cancellation. The SDK is never given a cancellation token, so any cancellation is the timeout.
+        /// </summary>
+        private static bool IsTimeout(Exception exception)
+        {
+            for (Exception? e = exception; e != null; e = e.InnerException)
+            {
+                if (e is OperationCanceledException or TimeoutException)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
