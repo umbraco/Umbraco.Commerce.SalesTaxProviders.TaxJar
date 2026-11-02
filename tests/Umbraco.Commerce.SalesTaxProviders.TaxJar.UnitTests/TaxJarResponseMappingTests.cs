@@ -90,7 +90,7 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests
         }
 
         [Fact]
-        public void MapResponse_Should_Create_Four_Breakdown_Rows_In_City_County_State_Country_Order()
+        public void MapResponse_Should_Create_Breakdown_Rows_In_City_County_State_Country_Special_District_Order()
         {
             // preparation
             TaxResponseAttributes response = Deserialize();
@@ -99,7 +99,7 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests
             SalesTaxCalculationResult result = TaxJarCalculation.MapResponse(response, _currencyId);
 
             // asserts
-            result.Breakdown.Select(x => x.Jurisdiction).Should().Equal("city", "county", "state", "country");
+            result.Breakdown.Select(x => x.Jurisdiction).Should().Equal("city", "county", "state", "country", "special_district");
         }
 
         [Fact]
@@ -119,8 +119,22 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests
                     { "county", 0.15m },
                     { "state", 0.94m },
                     { "country", 0m },
+                    { "special_district", 0.26m },
                 });
             result.Breakdown.Should().OnlyContain(x => x.Amount.CurrencyId == _currencyId);
+        }
+
+        [Fact]
+        public void MapResponse_Should_Make_The_Breakdown_Add_Up_To_The_Amount_To_Collect()
+        {
+            // preparation
+            TaxResponseAttributes response = Deserialize();
+
+            // execution
+            SalesTaxCalculationResult result = TaxJarCalculation.MapResponse(response, _currencyId);
+
+            // asserts
+            result.Breakdown.Sum(x => x.Amount.Value).Should().Be(result.Amount.Value);
         }
 
         internal static TaxResponseAttributes Deserialize()
