@@ -128,6 +128,7 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
                         new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.CountyTaxCollectable, context.Order.CurrencyId), "county"),
                         new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.StateTaxCollectable, context.Order.CurrencyId), "state"),
                         new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.CountryTaxCollectable, context.Order.CurrencyId), "country"),
+                        new SalesTaxBreakdown(new Amount(taxResponse.Breakdown.SpecialDistrictTaxCollectable, context.Order.CurrencyId), "special_district"),
                     }
                 };
 
