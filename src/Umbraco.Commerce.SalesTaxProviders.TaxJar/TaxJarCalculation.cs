@@ -63,20 +63,38 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
             return null;
         }
 
+        /// <summary>
+        /// Builds a TaxJar line item. TaxJar only accepts whole quantities, so a fractional quantity
+        /// (1.5 kg, say) is sent as one unit priced at the line's total, which keeps the taxable amount exact.
+        /// </summary>
         public static TaxLineItem BuildLineItem(
             string sku,
             decimal quantity,
             string? productTaxCode,
             decimal unitPrice,
             decimal discount)
-            => new()
+        {
+            if (quantity == decimal.Truncate(quantity))
+            {
+                return new()
+                {
+                    Id = sku,
+                    Quantity = (int)quantity,
+                    ProductTaxCode = productTaxCode,
+                    UnitPrice = unitPrice,
+                    Discount = discount,
+                };
+            }
+
+            return new()
             {
                 Id = sku,
-                Quantity = (int)quantity,
+                Quantity = 1,
                 ProductTaxCode = productTaxCode,
-                UnitPrice = unitPrice,
+                UnitPrice = unitPrice * quantity,
                 Discount = discount,
             };
+        }
 
         public static Tax BuildTaxRequest(
             Address fromAddress,

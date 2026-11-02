@@ -161,6 +161,27 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar.UnitTests
         }
 
         [Fact]
+        public void BuildLineItem_Should_Send_A_Fractional_Quantity_As_One_Unit_At_The_Line_Total()
+        {
+            // execution
+            TaxLineItem item = TaxJarCalculation.BuildLineItem("SKU-1", 1.5m, "20010", 10m, 0m);
+
+            // asserts
+            item.Quantity.Should().Be(1);
+            item.UnitPrice.Should().Be(15m);
+        }
+
+        [Fact]
+        public void BuildLineItem_Should_Not_Truncate_A_Fractional_Quantity_Below_One()
+        {
+            // execution
+            TaxLineItem item = TaxJarCalculation.BuildLineItem("SKU-1", 0.25m, null, 8m, 0m);
+
+            // asserts
+            (item.Quantity * item.UnitPrice).Should().Be(2m);
+        }
+
+        [Fact]
         public void BuildLineItem_Should_Leave_The_Tax_Code_Empty_When_There_Is_None()
         {
             // execution
