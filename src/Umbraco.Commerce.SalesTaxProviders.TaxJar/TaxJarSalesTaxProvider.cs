@@ -100,14 +100,12 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
                             ? taxClasses.FirstOrDefault(y => y.Id == x.TaxClassId.Value)
                             : null) ?? storeDefaultTaxClass;
 
-                        return new TaxLineItem
-                        {
-                            Id = x.Sku,
-                            Quantity = (int)x.Quantity,
-                            ProductTaxCode = taxClass?.GetTaxCode(taxSource),
-                            UnitPrice = orderLineCalc.UnitPrice.Value.WithoutTax,
-                            Discount = orderLineCalc.TotalPrice.TotalAdjustment.WithoutTax
-                        };
+                        return BuildLineItem(
+                            x.Sku,
+                            x.Quantity,
+                            taxClass?.GetTaxCode(taxSource),
+                            orderLineCalc.UnitPrice.Value.WithoutTax,
+                            orderLineCalc.TotalPrice.TotalAdjustment.WithoutTax);
 
                     }).ToList()
                 }).ConfigureAwait(false);
@@ -140,6 +138,39 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
 
                 return new SalesTaxCalculationResult(zeroAmount);
             }
+        }
+
+        /// <summary>
+        /// Builds a TaxJar line item. TaxJar only accepts whole quantities, so a fractional quantity
+        /// (1.5 kg, say) is sent as one unit priced at the line's total, which keeps the taxable amount exact.
+        /// </summary>
+        private static TaxLineItem BuildLineItem(
+            string sku,
+            decimal quantity,
+            string? productTaxCode,
+            decimal unitPrice,
+            decimal discount)
+        {
+            if (quantity == decimal.Truncate(quantity))
+            {
+                return new TaxLineItem
+                {
+                    Id = sku,
+                    Quantity = (int)quantity,
+                    ProductTaxCode = productTaxCode,
+                    UnitPrice = unitPrice,
+                    Discount = discount
+                };
+            }
+
+            return new TaxLineItem
+            {
+                Id = sku,
+                Quantity = 1,
+                ProductTaxCode = productTaxCode,
+                UnitPrice = unitPrice * quantity,
+                Discount = discount
+            };
         }
     }
 }
