@@ -95,9 +95,10 @@ namespace Umbraco.Commerce.SalesTaxProviders.TaxJar
                     {
                         OrderLineCalculation? orderLineCalc = context.OrderCalculation.OrderLines[x.Id];
 
-                        TaxClassReadOnly? taxClass = x.TaxClassId.HasValue
-                            ? taxClasses?.FirstOrDefault(y => y.Id == x.TaxClassId.Value)
-                            : storeDefaultTaxClass;
+                        // An order line's tax class that isn't found falls back to the store default
+                        TaxClassReadOnly? taxClass = (x.TaxClassId.HasValue
+                            ? taxClasses.FirstOrDefault(y => y.Id == x.TaxClassId.Value)
+                            : null) ?? storeDefaultTaxClass;
 
                         return new TaxLineItem
                         {
